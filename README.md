@@ -1,13 +1,12 @@
 # Originally forked from oznu/docker-cloudflare-ddns
 
-Merged repository from [two70](https://github.com/two70/cloudflare-ddns/tree/master)
-Merged features from [TThanhXuan](https://github.com/TThanhXuan/docker-cloudflare-ddns-telegram)
-Merged Feature from [VSF1](https://github.com/VSF1/docker-cloudflare-ddns)
-Merged Features from [sachasmart](https://github.com/sachasmart/docker-cloudflare-ddns)
-Merged Features from [enstyrka](https://github.com/enstyrka/docker-cloudflare-ddns)
-
-Merged Features from [aaronbolton](https://github.com/aaronbolton/docker-cloudflare-ddns)
-
+- Merged repository from [two70](https://github.com/two70/cloudflare-ddns/tree/master)
+- Merged features from [TThanhXuan](https://github.com/TThanhXuan/docker-cloudflare-ddns-telegram)
+- Merged Feature from [VSF1](https://github.com/VSF1/docker-cloudflare-ddns)
+- Merged Features from [sachasmart](https://github.com/sachasmart/docker-cloudflare-ddns)
+- Merged Features from [enstyrka](https://github.com/enstyrka/docker-cloudflare-ddns)
+- Merged Features from [aaronbolton](https://github.com/aaronbolton/docker-cloudflare-ddns)
+- Merged Features from [ian-otto](https://github.com/ian-otto/docker-cloudflare-ddns)
 
 Since the main repo is no longer maintained, I forked it to add some functinality I would like to see, such as dates in logging and Discord webhooks.
 
