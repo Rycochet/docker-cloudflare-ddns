@@ -1,8 +1,9 @@
 # Originally forked from oznu/docker-cloudflare-ddns
 
-Merged repository from **https://github.com/two70/cloudflare-ddns/tree/master**
-Merged features from TThanhXuan 
-Merged Feature from VSF1 https://github.com/VSF1/docker-cloudflare-ddns
+Merged repository from [two70](https://github.com/two70/cloudflare-ddns/tree/master)
+Merged features from [TThanhXuan](https://github.com/TThanhXuan/docker-cloudflare-ddns-telegram)
+Merged Feature from [VSF1](https://github.com/VSF1/docker-cloudflare-ddns)
+Merged Features from [sachasmart](https://github.com/sachasmart/docker-cloudflare-ddns)
 
 Since the main repo is no longer maintained, I forked it to add some functinality I would like to see, such as dates in logging and Discord webhooks.
 
@@ -26,7 +27,7 @@ docker run \
   -e API_KEY=xxxxxxx \
   -e ZONE=example.com \
   -e SUBDOMAIN=subdomain \
-  -e WEBHOOK_URL=https://discord.com/blah \
+  -e DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxxxxx \
   ghcr.io/two70/cloudflare-ddns
 ```
 
@@ -49,7 +50,7 @@ docker run \
 * `-e CUSTOM_LOOKUP_CMD="echo '1.1.1.1'"` - Set to any shell command to run them and have the IP pulled from the standard output. Leave unset to use default IP address detection methods.
 * `-e DNS_SERVER=10.0.0.2` - Set to the IP address of the DNS server you would like to use. Defaults to 1.1.1.1 otherwise. 
 * `-e CRON="@daily"` - Set your own custom CRON value before the exec portion. Defaults to every 5 minutes - `*/5 * * * *`.
-* `-e WEBHOOK_URL` - Webhook URL to send updated IP information to. Currently only supports Discord
+- `-e DISCORD_WEBHOOK_URL` - Set to a Discord webhook URL to send a message when the IP address changes.
 
 ## Depreciated Parameters
 
@@ -75,7 +76,7 @@ If you need multiple records pointing to your public IP address you can create C
 
 ## IPv6
 
-If you're wanting to set IPv6 records set the envrionment variable `RRTYPE=AAAA`. You will also need to run docker with IPv6 support, or run the container with host networking enabled.
+If you're wanting to set IPv6 records set the environment variable `RRTYPE=AAAA`. You will also need to run docker with IPv6 support, or run the container with host networking enabled.
 
 ## Docker Compose
 
@@ -92,7 +93,7 @@ services:
       - ZONE=<mydomain>
       - SUBDOMAIN=subdomain
       - PROXIED=true
-      - WEBHOOK_URL=https://discord.com/<mywebhook>
+      - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxxxxx
       - TZ=America/Denver
 ```
 

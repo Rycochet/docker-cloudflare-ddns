@@ -9,6 +9,7 @@ CHAT_ID=$RECIPIENT_CHAT_ID
 URL="https://api.telegram.org/bot$TOKEN/sendMessage"
 
 DnsIpAddress=$(getDnsRecordIp $CF_ZONE_ID $CF_RECORD_ID)
+DiscordWebhookUrl=$DISCORD_WEBHOOK_URL
 
 
 if [ ! -z ${CUSTOM_LOOKUP_CMD+x} ]; then
