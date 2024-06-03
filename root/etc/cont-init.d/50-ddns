@@ -20,8 +20,9 @@ else
 fi
 
 now=$(date '+%Y-%m-%d %H:%M:%S')
-
-if [ "$CurrentIpAddress" != "$DnsIpAddress" ]; then
+if [ "$DnsIpAddress" == "" ]; then
+  echo "ERROR: Failed to determine DNS record $CF_RECORD_NAME ip address."
+elif [ "$CurrentIpAddress" != "$DnsIpAddress" ]; then
   echo "$now: Updating CloudFlare DNS record $CF_RECORD_NAME from $DnsIpAddress to $CurrentIpAddress..."
   update=$(updateDnsRecord $CF_ZONE_ID $CF_RECORD_ID $CF_RECORD_NAME $CurrentIpAddress)
 
@@ -35,11 +36,8 @@ if [ "$CurrentIpAddress" != "$DnsIpAddress" ]; then
   fi
   
 else
-
   msg="$now: No DNS update required for $CF_RECORD_NAME ($DnsIpAddress)."
   echo $msg
-
 fi
-
 echo $msg
 curl -s -X POST $URL -d chat_id=$CHAT_ID -d text="$msg"

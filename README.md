@@ -1,6 +1,9 @@
 # Originally forked from oznu/docker-cloudflare-ddns
 
 Merged repository from **https://github.com/two70/cloudflare-ddns/tree/master**
+Merged features from TThanhXuan 
+Merged Feature from VSF1 https://github.com/VSF1/docker-cloudflare-ddns
+
 Since the main repo is no longer maintained, I forked it to add some functinality I would like to see, such as dates in logging and Discord webhooks.
 
 [![Docker](https://github.com/two70/cloudflare-ddns/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/two70/cloudflare-ddns/actions/workflows/docker-publish.yml)
