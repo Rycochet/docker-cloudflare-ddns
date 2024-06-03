@@ -21,6 +21,15 @@ cloudflare() {
   fi
 }
 
+webhook() {
+  if [ ! -z "$WEBHOOK_URL" ]; then
+    curl -sSL \
+    -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    "$@"
+  fi
+}
+
 getLocalIpAddress() {
   if [ "$RRTYPE" == "A" ]; then
     IP_ADDRESS=$(ip addr show $INTERFACE | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2; exit}')
@@ -114,3 +123,4 @@ deleteDnsRecord() {
 getDnsRecordIp() {
   cloudflare "$CF_API/zones/$1/dns_records/$2" | jq -r '.result.content'
 }
+
