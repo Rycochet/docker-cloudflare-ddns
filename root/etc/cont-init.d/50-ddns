@@ -2,8 +2,14 @@
 
 . /app/cloudflare.sh
 . /config/cloudflare.conf
+# Your Telegram Bot API Token
+TOKEN=$YOUR_BOT_TOKEN
+# Chat ID of the recipient
+CHAT_ID=$RECIPIENT_CHAT_ID
+URL="https://api.telegram.org/bot$TOKEN/sendMessage"
 
 DnsIpAddress=$(getDnsRecordIp $CF_ZONE_ID $CF_RECORD_ID)
+
 
 if [ ! -z ${CUSTOM_LOOKUP_CMD+x} ]; then
   CurrentIpAddress=$(getCustomIpAddress)
@@ -20,12 +26,20 @@ if [ "$CurrentIpAddress" != "$DnsIpAddress" ]; then
   update=$(updateDnsRecord $CF_ZONE_ID $CF_RECORD_ID $CF_RECORD_NAME $CurrentIpAddress)
 
   if [ "$update" == "null" ]; then
-    echo "$now: ERROR: Failed to update CloudFlare DNS record $CF_RECORD_NAME from $DnsIpAddress to $CurrentIpAddress"
+    msg="$now: ERROR: Failed to update CloudFlare DNS record $CF_RECORD_NAME from $DnsIpAddress to $CurrentIpAddress"
+    echo $msg
   else
     webhook -X POST --data "{\"content\": \"$CF_RECORD_NAME updated to $CurrentIpAddress\"}" "$WEBHOOK_URL"
-    echo "$now: CloudFlare DNS record $CF_RECORD_NAME ($CurrentIpAddress) updated successfully."
+    msg="$now: CloudFlare DNS record $CF_RECORD_NAME ($CurrentIpAddress) updated successfully."
+    echo $msg
   fi
   
 else
-  echo "$now: No DNS update required for $CF_RECORD_NAME ($DnsIpAddress)."
+
+  msg="$now: No DNS update required for $CF_RECORD_NAME ($DnsIpAddress)."
+  echo $msg
+
 fi
+
+echo $msg
+curl -s -X POST $URL -d chat_id=$CHAT_ID -d text="$msg"

@@ -10,6 +10,9 @@ Since the main repo is no longer maintained, I forked it to add some functinalit
 This small Alpine Linux based Docker image will allow you to use the free [CloudFlare DNS Service](https://www.cloudflare.com/dns/) as a Dynamic DNS Provider ([DDNS](https://en.wikipedia.org/wiki/Dynamic_DNS)).
 
 This is a multi-arch image and will run on amd64, aarch64, and armhf devices, including the Raspberry Pi.
+| amd64         | x64           | Alpine Linux  | [![](https://images.microbadger.com/badges/image/xuantran94/cloudflare-ddns-telegram:amd64.svg)](https://microbadger.com/images/xuantran94/cloudflare-ddns-telegram:amd64) |
+| arm          | arm32v6       | Alpine Linux  | [![](https://images.microbadger.com/badges/image/xuantran94/cloudflare-ddns-telegram:arm.svg)](https://microbadger.com/images/xuantran94/cloudflare-ddns-telegram:arm) |
+| arm64        | arm64         | Alpine Linux  | [![](https://images.microbadger.com/badges/image/xuantran94/cloudflare-ddns-telegram:arm64.svg)](https://microbadger.com/images/xuantran94/cloudflare-ddns-telegram:arm64) |
 
 ## Usage
 
