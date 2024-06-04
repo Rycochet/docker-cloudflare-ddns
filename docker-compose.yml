@@ -4,12 +4,22 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: "cloudflare-ddns"
-    restart: always
+    restart: always # ensure the container restarts automatically after host reboot
     environment:
       - API_KEY=${CLOUDFLARE_API_KEY}
+      - CF_API=${CF_API}
+      - API_KEY_FILE=${CLOUDFLARE_API_KEY_FILE:-}
+      - SUBDOMAIN=${SUBDOMAIN:-}
+      - SUBDOMAIN_FILE=${SUBDOMAIN_FILE:-}
       - ZONE=${CLOUDFLARE_ZONE}
-      - 
-      - PROXIED=false
+      - PROXIED=${PROXIED:-false}
+      - RRTYPE=${RRTYPE:-A}
+      - DELETE_ON_STOP=${DELETE_ON_STOP:-false}
+      - INTERFACE=${INTERFACE:-}
+      - CUSTOM_LOOKUP_CMD=${CUSTOM_LOOKUP_CMD:-}
+      - DNS_SERVER=${DNS_SERVER:-1.1.1.1}
+      - CRON=${CRON:-@hourly}
+      - WEBHOOK_URL=${WEBHOOK_URL:-}
       - PUID=1000
       - PGID=1000
-      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      # - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
