@@ -1,17 +1,19 @@
 #!/usr/bin/with-contenv sh
 
-cloudflare() {
-  if [ -f "$API_KEY_FILE" ]; then
+# This file contains all the functions called by the scripts executed automatically
+
+cloudflare() { # Generic function for making API calls
+  if [ -f "$API_KEY_FILE" ]; then # Check if file exists and it's specified
       API_KEY=$(cat $API_KEY_FILE)
   fi
   
-  if [ -z "$EMAIL" ]; then
+  if [ -z "$EMAIL" ]; then # True if length of string is zero
       curl -sSL \
       -H "Accept: application/json" \
       -H "Content-Type: application/json" \
       -H "Authorization: Bearer $API_KEY" \
-      "$@"
-  else
+      "$@" # $@ is all of the parameters passed to the script. For instance, if you call ./someScript.sh foo bar then $@ will be equal to foo bar.
+  else # Email is specified, let's add to api
       curl -sSL \
       -H "Accept: application/json" \
       -H "Content-Type: application/json" \
@@ -22,7 +24,7 @@ cloudflare() {
 }
 
 webhook() {
-  if [ ! -z "$WEBHOOK_URL" ]; then
+  if [ ! -z "$WEBHOOK_URL" ]; then # if webhook url is set
     curl -sSL \
     -H "Accept: application/json" \
     -H "Content-Type: application/json" \
@@ -81,7 +83,7 @@ getPublicIpAddress() {
 
     echo $IP_ADDRESS
     
-  elif [ "$RRTYPE" == "AAAA" ]; then
+  elif [ "$RRTYPE" == "AAAA" ]; then #get public ipv6 addr
     # try dns method first.
     IP_ADDRESS=$(dig +short @2606:4700:4700::1111 -6 ch txt whoami.cloudflare | tr -d '"')
 
@@ -95,7 +97,7 @@ getPublicIpAddress() {
 }
 
 getDnsRecordName() {
-  if [ ! -z "$SUBDOMAIN" ]; then
+  if [ ! -z "$SUBDOMAIN" ]; then # Subdomain is filled
     echo $SUBDOMAIN.$ZONE
   else
     echo $ZONE
@@ -128,17 +130,22 @@ createDnsRecord() {
 
 updateDnsRecord() {
   if [[ "$PROXIED" != "true" && "$PROXIED" != "false" ]]; then
-    PROXIED="false"
+    PROXIED="false" # Setting default value if not standard
   fi
 
-  cloudflare -X PATCH -d "{\"type\": \"$RRTYPE\",\"name\":\"$3\",\"content\":\"$4\",\"proxied\":$PROXIED }" "$CF_API/zones/$1/dns_records/$2" | jq -r '.result.id'
+  cloudflare -X PATCH \
+    -d "{\"type\": \"$RRTYPE\",\"name\":\"$3\",\"content\":\"$4\",\"proxied\":$PROXIED }" \
+    "$CF_API/zones/$1/dns_records/$2" \
+    | jq -r '.result.id'
 }
 
 deleteDnsRecord() {
   cloudflare -X DELETE "$CF_API/zones/$1/dns_records/$2" | jq -r '.result.id'
 }
 
-getDnsRecordIp() {
+# $1: zone id
+# $2: record id
+getDnsRecordIp() { 
   cloudflare "$CF_API/zones/$1/dns_records/$2" | jq -r '.result.content'
 }
 

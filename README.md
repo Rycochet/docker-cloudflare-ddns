@@ -17,8 +17,11 @@ Since the main repo is no longer maintained, I forked it to add some functinalit
 This small Alpine Linux based Docker image will allow you to use the free [CloudFlare DNS Service](https://www.cloudflare.com/dns/) as a Dynamic DNS Provider ([DDNS](https://en.wikipedia.org/wiki/Dynamic_DNS)).
 
 This is a multi-arch image and will run on amd64, aarch64, and armhf devices, including the Raspberry Pi.
-| amd64         | x64           | Alpine Linux  | [![](https://images.microbadger.com/badges/image/xuantran94/cloudflare-ddns-telegram:amd64.svg)](https://microbadger.com/images/xuantran94/cloudflare-ddns-telegram:amd64) |
+
+| amd64         | x64           | Alpine Linux  | [![](https://images.microbadger.com/badges/image/xuantran94/cloudflare-ddns-telegram:amd64.svg)](https://microbadger.com/images/xuantran94/cloudflare-ddns-telegram:amd64) | 
+
 | arm          | arm32v6       | Alpine Linux  | [![](https://images.microbadger.com/badges/image/xuantran94/cloudflare-ddns-telegram:arm.svg)](https://microbadger.com/images/xuantran94/cloudflare-ddns-telegram:arm) |
+
 | arm64        | arm64         | Alpine Linux  | [![](https://images.microbadger.com/badges/image/xuantran94/cloudflare-ddns-telegram:arm64.svg)](https://microbadger.com/images/xuantran94/cloudflare-ddns-telegram:arm64) |
 
 ## Usage
@@ -30,22 +33,22 @@ docker run \
   -e API_KEY=xxxxxxx \
   -e ZONE=example.com \
   -e SUBDOMAIN=subdomain \
-  -e DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxxxxx \
+  -e WEBHOOK_URL=https://discord.com/api/webhooks/xxxxxx \
   ghcr.io/two70/cloudflare-ddns
 ```
 
-## Parameters
+## **Required** parameters
 
-* `--restart=always` - ensure the container restarts automatically after host reboot.
-* `-e API_KEY` - Your CloudFlare scoped API token. See the [Creating a Cloudflare API token](#creating-a-cloudflare-api-token) below. **Required**
-  * `API_KEY_FILE` - Path to load your CloudFlare scoped API token from (e.g. a Docker secret). *If both `API_KEY_FILE` and `API_KEY` are specified, `API_KEY_FILE` takes precedence.*
-* `-e ZONE` - The DNS zone that DDNS updates should be applied to. **Required**
+
+* `-e API_KEY` - Your CloudFlare scoped API token. See the [Creating a Cloudflare API token](#creating-a-cloudflare-api-token) below. 
+* `-e ZONE` - The DNS zone that DDNS updates should be applied to. 
   * `ZONE_FILE` - Path to load your CloudFlare DNS Zone from (e.g. a Docker secret). *If both `ZONE_FILE` and `ZONE` are specified, `ZONE_FILE` takes precedence.*
 * `-e SUBDOMAIN` - A subdomain of the `ZONE` to write DNS changes to. If this is not supplied the root zone will be used.
   * `SUBDOMAIN_FILE` - Path to load your CloudFlare DNS Subdomain from (e.g. a Docker secret). *If both `SUBDOMAIN_FILE` and `SUBDOMAIN` are specified, `SUBDOMAIN_FILE` takes precedence.*
 
 ## Optional Parameters
 
+* `--restart=always` - ensure the container restarts automatically after host reboot.
 * `-e PROXIED` - Set to `true` to make traffic go through the CloudFlare CDN. Defaults to `false`.
 * `-e RRTYPE=A` - Set to `AAAA` to use set IPv6 records instead of IPv4 records. Defaults to `A` for IPv4 records.
 * `-e DELETE_ON_STOP` - Set to `true` to have the dns record deleted when the container is stopped. Defaults to `false`.
@@ -53,9 +56,10 @@ docker run \
 * `-e CUSTOM_LOOKUP_CMD="echo '1.1.1.1'"` - Set to any shell command to run them and have the IP pulled from the standard output. Leave unset to use default IP address detection methods.
 * `-e DNS_SERVER=10.0.0.2` - Set to the IP address of the DNS server you would like to use. Defaults to 1.1.1.1 otherwise. 
 * `-e CRON="@daily"` - Set your own custom CRON value before the exec portion. Defaults to every 5 minutes - `*/5 * * * *`.
-- `-e DISCORD_WEBHOOK_URL` - Set to a Discord webhook URL to send a message when the IP address changes.
+- `-e WEBHOOK_URL` - Set to a webhook URL to send a message when the IP address changes.
+- `-e API_KEY_FILE` - Path to load your CloudFlare scoped API token from (e.g. a Docker secret). *If both `API_KEY_FILE` and `API_KEY` are specified, `API_KEY_FILE` takes precedence.*
 
-## Depreciated Parameters
+## Deprecated Parameters
 
 * `-e EMAIL` - Your CloudFlare email address when using an Account-level token. This variable MUST NOT be set when using a scoped API token.
 
@@ -86,7 +90,6 @@ If you're wanting to set IPv6 records set the environment variable `RRTYPE=AAAA`
 If you prefer to use [Docker Compose](https://docs.docker.com/compose/):
 
 ```yml
-version: '2'
 services:
   cloudflare-ddns:
     image: ghcr.io/two70/cloudflare-ddns
@@ -96,7 +99,7 @@ services:
       - ZONE=<mydomain>
       - SUBDOMAIN=subdomain
       - PROXIED=true
-      - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/xxxxxx
+      - WEBHOOK_URL=https://discord.com/api/webhooks/xxxxxx
       - TZ=America/Denver
 ```
 

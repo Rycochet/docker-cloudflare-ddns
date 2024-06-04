@@ -1,6 +1,6 @@
 #!/usr/bin/with-contenv sh
 
-. /app/cloudflare.sh
+. /app/cloudflare.sh # Loading script with all functions
 
 # Load ZONE and SUBDOMAIN vars from Docker Swarm secrets, if available:
 if [ -f "$SUBDOMAIN_FILE" ]; then
@@ -17,18 +17,17 @@ if [ "$statusCode" != "200" ]; then
   echo "----------------------------------------------------------------"
   echo "ERROR: Invalid CloudFlare Credentials - $statusCode"
   echo "----------------------------------------------------------------"
-  if [ -z "$EMAIL" ]
-    then
-      echo "Make sure the API_KEY is correct. You can"
-      echo "get your scoped CloudFlare API Token here:"
-      echo "https://dash.cloudflare.com/profile/api-tokens"
-    else
+  if [ ! -z "$EMAIL" ]; then
       echo "Make sure the EMAIL and API_KEY variables are correct. You can"
       echo "get your CloudFlare API Key here:"
       echo "https://www.cloudflare.com/a/profile"
       echo
       echo "If you are using a zone token please remove the EMAIL variable"
       echo "from this container."
+    else
+      echo "Make sure the API_KEY is correct. You can"
+      echo "get your scoped CloudFlare API Token here:"
+      echo "https://dash.cloudflare.com/profile/api-tokens"
   fi
   echo
   echo "----------------------------------------------------------------"
@@ -55,7 +54,7 @@ echo "DNS Zone: $ZONE ($CFZoneId)"
 # Check we can get the current public ip address
 PublicIpAddress=$(getPublicIpAddress)
 
-if [ ! -z ${INTERFACE+x} ]; then
+if [ ! -z ${INTERFACE+x} ]; then #Getting IP address from set net. interface 
   PublicIpAddress=$(getLocalIpAddress)
 fi
 
@@ -92,9 +91,11 @@ if [ "$CFDnsRecordId" == "null" ]; then
     exit 1
   fi
 
-  webhook -X POST --data "{\"content\": \"$CFDnsRecordName created with IP $PublicIpAddress\"}" "$WEBHOOK_URL"
+  # Calling webhook
+  #webhook -X POST --data "{\"content\": \"$CFDnsRecordName created with IP $PublicIpAddress\"}" "$WEBHOOK_URL"
 fi
 
 echo "DNS Record: $CFDnsRecordName ($CFDnsRecordId)"
+echo "Creating setup cloudflare file with these params: CF_ZONE_ID=\"$CFZoneId\" CF_RECORD_ID=\"$CFDnsRecordId\" CF_RECORD_NAME=\"$CFDnsRecordName\""
 echo "CF_ZONE_ID=\"$CFZoneId\" CF_RECORD_ID=\"$CFDnsRecordId\" CF_RECORD_NAME=\"$CFDnsRecordName\"" > /config/cloudflare.conf
 echo "$CRON	/etc/cont-init.d/50-ddns" > /var/spool/cron/crontabs/root

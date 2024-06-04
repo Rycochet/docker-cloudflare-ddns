@@ -8,7 +8,8 @@ services:
     environment:
       - API_KEY=${CLOUDFLARE_API_KEY}
       - ZONE=${CLOUDFLARE_ZONE}
-      - PROXIED=true
+      - 
+      - PROXIED=false
       - PUID=1000
       - PGID=1000
       - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
