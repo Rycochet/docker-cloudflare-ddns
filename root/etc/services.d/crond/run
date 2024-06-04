@@ -1,4 +1,7 @@
-#!/usr/bin/with-contenv sh
+#!/command/with-contenv sh
 
 echo "Starting crond..."
-/usr/sbin/crond -f -l 8 -d 6
+# -l option: log verbosity 
+# -f foreground
+# -d log level, to stderr
+/usr/sbin/crond -f -l 8 -d 6 
