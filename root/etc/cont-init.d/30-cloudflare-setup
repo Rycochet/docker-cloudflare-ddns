@@ -77,7 +77,7 @@ fi
 
 # Get the ID of the dns record from the CloudFlare API
 CFDnsRecordName=$(getDnsRecordName)
-CFDnsRecordId=$(getDnsRecordId $CFZoneId $CFDnsRecordName)
+CFDnsRecordId=$(getDnsRecordId $CFZoneId $CFDnsRecordName $RRTYPE)
 
 # If the dns record does not exist, create it now.
 if [ "$CFDnsRecordId" == "null" ]; then
@@ -97,5 +97,6 @@ fi
 
 echo "DNS Record: $CFDnsRecordName ($CFDnsRecordId)"
 echo "Creating setup cloudflare file with these params: CF_ZONE_ID=\"$CFZoneId\" CF_RECORD_ID=\"$CFDnsRecordId\" CF_RECORD_NAME=\"$CFDnsRecordName\""
+
 echo "CF_ZONE_ID=\"$CFZoneId\" CF_RECORD_ID=\"$CFDnsRecordId\" CF_RECORD_NAME=\"$CFDnsRecordName\"" > /config/cloudflare.conf
 echo "$CRON	/etc/cont-init.d/50-ddns" > /var/spool/cron/crontabs/root

@@ -1,5 +1,9 @@
 #!/usr/bin/with-contenv sh
 
+getCurrentDate(){
+  date '+%Y-%m-%d %H:%M:%S'
+}
+
 # This file contains all the functions called by the scripts executed automatically
 
 cloudflare() { # Generic function for making API calls
@@ -116,8 +120,10 @@ getZoneId() {
   cloudflare "$CF_API/zones?name=$ZONE" | jq -r '.result[0].id'
 }
 
+# ZONE_ID NAME_Record Record_Type
 getDnsRecordId() {
-  cloudflare "$CF_API/zones/$1/dns_records?type=$RRTYPE&name=$2" | jq -r '.result[0].id'
+  #echo "Parameters of getDnsRecordId: 1 - ${1}, 2 - ${2}, 3 - ${3}"
+  cloudflare "$CF_API/zones/$1/dns_records?type=$3&name=$2" | jq -r '.result[0].id'
 }
 
 createDnsRecord() {
@@ -139,8 +145,47 @@ updateDnsRecord() {
     | jq -r '.result.id'
 }
 
+getAllPtrRecord(){
+  # Remove all previous PTR records
+  # Get all PTR records, for each ID delete
+  cloudflare "$CF_API/zones/$1/dns_records?type=PTR" | jq -r '.result | .[] | .id' > /tmp/ptr.txt
+}
+
 deleteDnsRecord() {
   cloudflare -X DELETE "$CF_API/zones/$1/dns_records/$2" | jq -r '.result.id'
+}
+
+
+createPTR_DnsRecord() {
+  if [[ "$PROXIED" != "true" && "$PROXIED" != "false" ]]; then
+    PROXIED="false"
+  fi
+
+  cloudflare -X POST -d "{\"type\": \"PTR\",\"name\":\"$1\",\"content\":\"$2\",\"proxied\":$PROXIED,\"ttl\":1 }" "$CF_API/zones/$3/dns_records" | jq -r '.result.id'
+}
+
+# 1 - $CF_RECORD_NAME 2- $currentIpAddress 3- $CF_ZONE_ID
+updateSPF_record() {
+  if [[ "$PROXIED" != "true" && "$PROXIED" != "false" ]]; then
+    PROXIED="false"
+  fi
+
+  #echo "params for getDnsRecordId: ${1} ${2} ${3}"
+  TXT_record_id=$(getDnsRecordId $3 $1 'TXT')
+  SPF_RECORD="v=spf1 include:spf.efwd.registrar-servers.com ip4:${2} ~all"
+
+  #echo "Record ID: ${TXT_record_id}"
+  if [ "$TXT_record_id" == "null" ]; then
+    msg="$(getCurrentDate) ERROR: Failed to get Dns Record for TXT rec."
+    echo msg
+  else
+    #webhook -X POST --data "{\"content\": \"$CF_RECORD_NAME updated to $CurrentIpAddress\"}" "$WEBHOOK_URL"
+    cloudflare -X PATCH -d "{\"type\": \"TXT\",\"name\":\"${1}\",\"content\":\"${SPF_RECORD}\",\"proxied\":$PROXIED,\"ttl\":1 }" "$CF_API/zones/$3/dns_records/$TXT_record_id" | jq -r '.result.id'
+    msg="$(getCurrentDate): CloudFlare DNS - TXT record $CF_RECORD_NAME ($CurrentIpAddress) updated successfully."
+
+    echo $msg
+  fi
+  
 }
 
 # $1: zone id
@@ -148,4 +193,3 @@ deleteDnsRecord() {
 getDnsRecordIp() { 
   cloudflare "$CF_API/zones/$1/dns_records/$2" | jq -r '.result.content'
 }
-
