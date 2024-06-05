@@ -37,9 +37,9 @@ webhook() {
 }
 
 getLocalIpAddress() {
-  if [ "$RRTYPE" == "A" ]; then
+  if [ "$IP_TYPE" == "4" ]; then
     IP_ADDRESS=$(ip addr show $INTERFACE | awk '$1 == "inet" {gsub(/\/.*$/, "", $2); print $2; exit}')
-  elif [ "$RRTYPE" == "AAAA" ]; then
+  elif [ "$IP_TYPE" == "6" ]; then
     IP_ADDRESS=$(ip addr show $INTERFACE | awk '$1 == "inet6" {gsub(/\/.*$/, "", $2); print $2; exit}')
   fi
 
@@ -52,7 +52,7 @@ getCustomIpAddress() {
 }
 
 getPublicIpAddress() {
-  if [ "$RRTYPE" == "A" ]; then
+  if [ "$IP_TYPE" == "4" ]; then
     # Use DNS_SERVER ENV variable or default to 1.1.1.1
     DNS_SERVER=${DNS_SERVER:=1.1.1.1}
     # Use api.ipify.org
@@ -87,7 +87,7 @@ getPublicIpAddress() {
 
     echo $IP_ADDRESS
     
-  elif [ "$RRTYPE" == "AAAA" ]; then #get public ipv6 addr
+  elif [ "$IP_TYPE" == "6" ]; then #get public ipv6 addr
     # try dns method first.
     IP_ADDRESS=$(dig +short @2606:4700:4700::1111 -6 ch txt whoami.cloudflare | tr -d '"')
 

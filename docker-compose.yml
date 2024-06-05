@@ -19,6 +19,7 @@ services:
       - PROXIED=${PROXIED:-false}
       
       - RRTYPE=${RRTYPE:-A}
+      - IP_TYPE=${IP_TYPE:-4}
 
       - DELETE_ON_STOP=${DELETE_ON_STOP:-false}
       - INTERFACE=${INTERFACE:-}
