@@ -1,4 +1,4 @@
-name: Docker
+name: Build and Push Container on Dockerhub and on Github Packages
 
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
@@ -80,9 +80,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
-          images: |
-            two70/cloudflare-ddns
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             # use custom value instead of git tag
             type=semver,pattern={{version}},value=${{env.ALPINE_VERSION}}
@@ -97,7 +95,7 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
