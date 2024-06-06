@@ -124,10 +124,10 @@ getZoneId() {
 getDnsRecordId() {
   #echo "Parameters of getDnsRecordId: 1 - ${1}, 2 - ${2}, 3 - ${3}"
   record_type=$3
-  if [ $record_type = "TXT-SPF" ]; then #Mapping for getting the right value
+  if [ $record_type == "TXT-SPF" ]; then #Mapping for getting the right value
     record_type="TXT"
   fi
-  cloudflare "$CF_API/zones/$1/dns_records?type=$3&name=$2" | jq -r '.result[0].id'
+  cloudflare "$CF_API/zones/$1/dns_records?type=$record_type&name=$2" | jq -r '.result[0].id'
 }
 
 createDnsRecord() {
@@ -135,7 +135,7 @@ createDnsRecord() {
     PROXIED="false"
   fi
   record_type=$RRTYPE
-  if [ $record_type = "TXT-SPF" ]; then #Mapping for getting the right value
+  if [ $record_type == "TXT-SPF" ]; then #Mapping for getting the right value
     record_type="TXT"
   fi
   cloudflare -X POST -d "{\"type\": \"$record_type\",\"name\":\"$2\",\"content\":\"$3\",\"proxied\":$PROXIED,\"ttl\":1 }" "$CF_API/zones/$1/dns_records" | jq -r '.result.id'
