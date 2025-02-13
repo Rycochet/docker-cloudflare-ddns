@@ -4,10 +4,10 @@
 
 # Load ZONE and SUBDOMAIN vars from Docker Swarm secrets, if available:
 if [ -f "$SUBDOMAIN_FILE" ]; then
-    SUBDOMAIN=$(cat $SUBDOMAIN_FILE)
+  SUBDOMAIN=$(cat $SUBDOMAIN_FILE | tr -s "\n" ",")
 fi
 if [ -f "$ZONE_FILE" ]; then
-    ZONE=$(cat $ZONE_FILE)
+  ZONE=$(cat $ZONE_FILE)
 fi
 
 # Verify the $EMAIL and $API_KEY env variables are valid
@@ -18,16 +18,16 @@ if [ "$statusCode" != "200" ]; then
   echo "ERROR: Invalid CloudFlare Credentials - $statusCode"
   echo "----------------------------------------------------------------"
   if [ ! -z "$EMAIL" ]; then
-      echo "Make sure the EMAIL and API_KEY variables are correct. You can"
-      echo "get your CloudFlare API Key here:"
-      echo "https://www.cloudflare.com/a/profile"
-      echo
-      echo "If you are using a zone token please remove the EMAIL variable"
-      echo "from this container."
-    else
-      echo "Make sure the API_KEY is correct. You can"
-      echo "get your scoped CloudFlare API Token here:"
-      echo "https://dash.cloudflare.com/profile/api-tokens"
+    echo "Make sure the EMAIL and API_KEY variables are correct. You can"
+    echo "get your CloudFlare API Key here:"
+    echo "https://www.cloudflare.com/a/profile"
+    echo
+    echo "If you are using a zone token please remove the EMAIL variable"
+    echo "from this container."
+  else
+    echo "Make sure the API_KEY is correct. You can"
+    echo "get your scoped CloudFlare API Token here:"
+    echo "https://dash.cloudflare.com/profile/api-tokens"
   fi
   echo
   echo "----------------------------------------------------------------"
@@ -52,7 +52,7 @@ fi
 echo "DNS Zone: $ZONE ($CFZoneId)"
 # Check we can get the current public ip address
 PublicIpAddress=$(getPublicIpAddress)
-if [ ! -z ${INTERFACE+x} ]; then #Getting IP address from set net. interface 
+if [ ! -z ${INTERFACE+x} ]; then #Getting IP address from set net. interface
   PublicIpAddress=$(getLocalIpAddress)
 fi
 
@@ -73,28 +73,38 @@ if [ "$PublicIpAddress" == "" ]; then
   exit 1
 fi
 
-# Get the ID of the dns record from the CloudFlare API
-CFDnsRecordName=$(getDnsRecordName)
-CFDnsRecordId=$(getDnsRecordId $CFZoneId $CFDnsRecordName $RRTYPE)
+# Get the ID of each the dns records from the CloudFlare API
+CFDnsOutput=""
+CFDnsRecordNames="$(getDnsRecordName | tr -s ',' ' ')"
+set -o noglob
+for CFDnsRecordName in $CFDnsRecordNames; do
+  CFDnsRecordId=$(getDnsRecordId $CFZoneId $CFDnsRecordName $RRTYPE)
 
-# If the dns record does not exist, create it now.
-if [ "$CFDnsRecordId" == "null" ] && [ "$RRTYPE" != "PTR" ]; then
-  echo "DNS record for '$CFDnsRecordName' was not found in $ZONE zone. Creating now..."
-  CFDnsRecordId=$(createDnsRecord $CFZoneId $CFDnsRecordName $PublicIpAddress)
+  # If the dns record does not exist, create it now.
+  if [ "$CFDnsRecordId" == "null" ] && [ "$RRTYPE" != "PTR" ]; then
+    echo "DNS record for '$CFDnsRecordName' was not found in $ZONE zone. Creating now..."
+    CFDnsRecordId=$(createDnsRecord $CFZoneId $CFDnsRecordName $PublicIpAddress)
 
-  if [ "$CFDnsRecordId" == "null" ]; then
-    echo "----------------------------------------------------------------"
-    echo "ERROR: Failed to create DNS record '$CFDnsRecordName'"
-    echo "----------------------------------------------------------------"
-    exit 1
+    if [ "$CFDnsRecordId" == "null" ]; then
+      echo "----------------------------------------------------------------"
+      echo "ERROR: Failed to create DNS record '$CFDnsRecordName'"
+      echo "----------------------------------------------------------------"
+      exit 1
+    fi
+
+    # Calling webhook
+    #webhook -X POST --data "{\"content\": \"$CFDnsRecordName created with IP $PublicIpAddress\"}" "$WEBHOOK_URL"
   fi
 
-  # Calling webhook
-  #webhook -X POST --data "{\"content\": \"$CFDnsRecordName created with IP $PublicIpAddress\"}" "$WEBHOOK_URL"
-fi
+  echo "DNS Record: $CFDnsRecordName ($CFDnsRecordId)"
+  if [ ! -z "$CFDnsOutput" ]; then
+    CFDnsOutput="$CFDnsOutput,$CFDnsRecordName=$CFDnsRecordId"
+  else
+    CFDnsOutput="$CFDnsRecordName=$CFDnsRecordId"
+  fi
+done
 
-echo "DNS Record: $CFDnsRecordName ($CFDnsRecordId)"
-echo "Creating setup cloudflare file with these params: CF_ZONE_ID=\"$CFZoneId\" CF_RECORD_ID=\"$CFDnsRecordId\" CF_RECORD_NAME=\"$CFDnsRecordName\""
+echo "Creating setup cloudflare file with these params: CF_ZONE_ID=\"$CFZoneId\" CF_RECORDS=\"$CFDnsOutput\""
+echo "CF_ZONE_ID=\"$CFZoneId\" CF_RECORDS=\"$CFDnsOutput\"" > /config/cloudflare.conf
 
-echo "CF_ZONE_ID=\"$CFZoneId\" CF_RECORD_ID=\"$CFDnsRecordId\" CF_RECORD_NAME=\"$CFDnsRecordName\"" > /config/cloudflare.conf
 echo "$CRON	/etc/cont-init.d/50-ddns" > /var/spool/cron/crontabs/root

@@ -11,13 +11,13 @@ services:
       - API_KEY=${CLOUDFLARE_API_KEY}
       - API_KEY_FILE=${CLOUDFLARE_API_KEY_FILE:-}
 
-      - SUBDOMAIN=${SUBDOMAIN:-}
+      - SUBDOMAIN=${SUBDOMAIN:-@}
       - SUBDOMAIN_FILE=${SUBDOMAIN_FILE:-}
 
       - ZONE=${CLOUDFLARE_ZONE}
 
       - PROXIED=${PROXIED:-false}
-      
+
       - RRTYPE=${RRTYPE:-A}
       - IP_TYPE=${IP_TYPE:-4}
 

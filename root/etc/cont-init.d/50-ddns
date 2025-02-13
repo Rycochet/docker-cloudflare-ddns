@@ -11,75 +11,85 @@ else
   CurrentIpAddress=$(getPublicIpAddress)
 fi
 
-DnsIpAddress=$(getDnsRecordIp $CF_ZONE_ID $CF_RECORD_ID)
+# Perform this for every domain and subdomain we list
+CF_RECORDS="$(echo $CF_RECORDS | tr -s ',' ' ')"
+for CF_RECORD in $CF_RECORDS; do
+  OLDIFS=$IFS;IFS="="
+  for token in $CF_RECORD; do
+    CF_RECORD_NAME=$(echo ${token%:*})
+    CF_RECORD_ID=$(echo ${token#*:})
+  done
+  IFS=$OLDIFS
 
-echo "Current Ip Address: ${CurrentIpAddress}"
-echo "DNS ip Address: ${DnsIpAddress}"
+  DnsIpAddress=$(getDnsRecordIp $CF_ZONE_ID $CF_RECORD_ID)
 
-if [ "$DnsIpAddress" == "" ]; then
-  echo "$(getCurrentDate): ERROR: Failed to determine DNS record $CF_RECORD_NAME ip address."
-fi
+  echo "Current Ip Address: ${CurrentIpAddress}"
+  echo "DNS ip Address: ${DnsIpAddress}"
 
-recordType=$RRTYPE
-
-if [ ! -z "$DnsIpAddress" ] &&
-  { [ "$recordType" == "A" ] || [ "$recordType" == "AAAA" ]; } &&
-  [ "$CurrentIpAddress" != "$DnsIpAddress" ]; then
-  echo "$(getCurrentDate): Updating CloudFlare DNS record $CF_RECORD_NAME from $DnsIpAddress to $CurrentIpAddress..."
-  update=$(updateDnsRecord $CF_ZONE_ID $CF_RECORD_ID $CF_RECORD_NAME $CurrentIpAddress)
-
-  if [ "$update" == "null" ]; then
-    msg=" ERROR: Failed to update CloudFlare DNS record $CF_RECORD_NAME from $DnsIpAddress to $CurrentIpAddress"
-    echo "$(getCurrentDate) ${msg}"
-  else
-    webhook -X POST --data "{\"content\": \"$CF_RECORD_NAME updated to $CurrentIpAddress\"}" "$WEBHOOK_URL"
-    msg="CloudFlare DNS record $CF_RECORD_NAME ($CurrentIpAddress) updated successfully."
-    echo "$(getCurrentDate) ${msg}"
+  if [ "$DnsIpAddress" == "" ]; then
+    echo "$(getCurrentDate): ERROR: Failed to determine DNS record $CF_RECORD_NAME ip address."
   fi
-else
-  msg="No DNS update required for $CF_RECORD_NAME ($DnsIpAddress)."
-  echo "$(getCurrentDate) $msg"
-fi
 
-if [ "$RRTYPE" == "PTR" ]; then
-  echo "$(getCurrentDate): Updating PTR name CloudFlare DNS record with value $CF_RECORD_NAME from $DnsIpAddress to $CurrentIpAddress..."
-  getAllPtrRecord $CF_ZONE_ID
+  if [ ! -z "$DnsIpAddress" ] &&
+    { [ "$RRTYPE" == "A" ] || [ "$RRTYPE" == "AAAA" ]; } &&
+    [ "$CurrentIpAddress" != "$DnsIpAddress" ]; then
+    echo "$(getCurrentDate): Updating CloudFlare DNS record $CF_RECORD_NAME from $DnsIpAddress to $CurrentIpAddress..."
+    update=$(updateDnsRecord $CF_ZONE_ID $CF_RECORD_ID $CF_RECORD_NAME $CurrentIpAddress)
 
-  while read ptr_record_id; do
-    delete_record_result=$(deleteDnsRecord $CF_ZONE_ID $ptr_record_id)
-    if [ "$delete_record_result" == "null" ]; then
-      msg=" ERROR: Failed to delete dns PTR record ${ptr_record_id}"
+    if [ "$update" == "null" ]; then
+      msg=" ERROR: Failed to update CloudFlare DNS record $CF_RECORD_NAME from $DnsIpAddress to $CurrentIpAddress"
+      echo "$(getCurrentDate) ${msg}"
+    else
+      webhook -X POST --data "{\"content\": \"$CF_RECORD_NAME updated to $CurrentIpAddress\"}" "$WEBHOOK_URL"
+      msg="CloudFlare DNS record $CF_RECORD_NAME ($CurrentIpAddress) updated successfully."
+      echo "$(getCurrentDate) ${msg}"
+    fi
+  else
+    msg="No DNS update required for $CF_RECORD_NAME ($DnsIpAddress)."
+    echo "$(getCurrentDate) $msg"
+  fi
+
+  if [ "$RRTYPE" == "PTR" ]; then
+    echo "$(getCurrentDate): Updating PTR name CloudFlare DNS record with value $CF_RECORD_NAME from $DnsIpAddress to $CurrentIpAddress..."
+    getAllPtrRecord $CF_ZONE_ID
+
+    while read ptr_record_id; do
+      delete_record_result=$(deleteDnsRecord $CF_ZONE_ID $ptr_record_id)
+      if [ "$delete_record_result" == "null" ]; then
+        msg=" ERROR: Failed to delete dns PTR record ${ptr_record_id}"
+        echo "$(getCurrentDate) ${msg}"
+      else
+        #webhook -X POST --data "{\"content\": \"$CF_RECORD_NAME updated to $CurrentIpAddress\"}" "$WEBHOOK_URL"
+        msg="CloudFlare DNS record deleted successfully."
+        echo "$(getCurrentDate) ${msg}"
+      fi
+    done </tmp/ptr.txt
+
+    result_PTR_creation=$(createPTR_DnsRecord $CurrentIpAddress $CF_RECORD_NAME $CF_ZONE_ID)
+    if [ "$result_PTR_creation" == "null" ]; then
+      msg=" ERROR: Failed to create dns PTR record ${ptr_record_id}"
       echo "$(getCurrentDate) ${msg}"
     else
       #webhook -X POST --data "{\"content\": \"$CF_RECORD_NAME updated to $CurrentIpAddress\"}" "$WEBHOOK_URL"
-      msg="CloudFlare DNS record deleted successfully."
+      msg="CloudFlare PTR DNS record created successfully."
       echo "$(getCurrentDate) ${msg}"
     fi
-  done </tmp/ptr.txt
-
-  result_PTR_creation=$(createPTR_DnsRecord $CurrentIpAddress $CF_RECORD_NAME $CF_ZONE_ID)
-  if [ "$result_PTR_creation" == "null" ]; then
-    msg=" ERROR: Failed to create dns PTR record ${ptr_record_id}"
-    echo "$(getCurrentDate) ${msg}"
-  else
-    #webhook -X POST --data "{\"content\": \"$CF_RECORD_NAME updated to $CurrentIpAddress\"}" "$WEBHOOK_URL"
-    msg="CloudFlare PTR DNS record created successfully."
-    echo "$(getCurrentDate) ${msg}"
   fi
-fi
 
-if [ "$RRTYPE" == "TXT-SPF" ]; then
-  echo "$(getCurrentDate): Updating TXT SPF record CloudFlare DNS record "
-  res_update_SPF=$(updateSPF_record $CF_RECORD_NAME $CurrentIpAddress $CF_ZONE_ID)
-  if [ "$res_update_SPF" == "null" ]; then
-    msg=" ERROR: Failed to update TXT SPF record"
-    echo "$(getCurrentDate) ${msg}"
-  else
-    #webhook -X POST --data "{\"content\": \"$CF_RECORD_NAME updated to $CurrentIpAddress\"}" "$WEBHOOK_URL"
-    msg="CloudFlare TXT SPF DNS record updated successfully."
-    echo "$(getCurrentDate) ${msg}"
+  if [ "$RRTYPE" == "TXT-SPF" ]; then
+    echo "$(getCurrentDate): Updating TXT SPF record CloudFlare DNS record "
+    res_update_SPF=$(updateSPF_record $CF_RECORD_NAME $CurrentIpAddress $CF_ZONE_ID)
+    if [ "$res_update_SPF" == "null" ]; then
+      msg=" ERROR: Failed to update TXT SPF record"
+      echo "$(getCurrentDate) ${msg}"
+    else
+      #webhook -X POST --data "{\"content\": \"$CF_RECORD_NAME updated to $CurrentIpAddress\"}" "$WEBHOOK_URL"
+      msg="CloudFlare TXT SPF DNS record updated successfully."
+      echo "$(getCurrentDate) ${msg}"
+    fi
   fi
-fi
+
+done
 
 # For telegram bot
 

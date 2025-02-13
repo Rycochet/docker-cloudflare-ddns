@@ -10,7 +10,7 @@ cloudflare() { # Generic function for making API calls
   if [ -f "$API_KEY_FILE" ]; then # Check if file exists and it's specified
       API_KEY=$(cat $API_KEY_FILE)
   fi
-  
+
   if [ -z "$EMAIL" ]; then # True if length of string is zero
       curl -sSL \
       -H "Accept: application/json" \
@@ -58,9 +58,9 @@ getPublicIpAddress() {
     # Use api.ipify.org
     IPIFY=$(curl -sf4 https://api.ipify.org)
     IP_ADDRESS=$([[ "$IPIFY" =~ ^[1-9][0-9]?[0-9]?\.[0-9][0-9]?[0-9]?\.[0-9][0-9]?[0-9]?\.[1-9][0-9]?[0-9]?$ ]] && echo "$IPIFY" || echo "")
-     
+
     # if IPIFY method fails
-    if [ "$IP_ADDRESS" = "" ]; then 
+    if [ "$IP_ADDRESS" = "" ]; then
       # try dns method first.
       CLOUD_FLARE_IP=$(dig +short @$DNS_SERVER ch txt whoami.cloudflare +time=3 | tr -d '"')
       CLOUD_FLARE_IP_LEN=${#CLOUD_FLARE_IP}
@@ -68,17 +68,17 @@ getPublicIpAddress() {
       # if using cloud flare fails, try opendns (some ISPs block 1.1.1.1)
       IP_ADDRESS=$([ $CLOUD_FLARE_IP_LEN -gt 15 ] && echo $(dig +short myip.opendns.com @resolver1.opendns.com +time=3) || echo "$CLOUD_FLARE_IP")
 
-      # another method: 
+      # another method:
       # IP_ADDRESS=$(curl -sf4 https://ipinfo.io | jq -r '.ip' || echo "$CLOUD_FLARE_IP")
     fi
 
-  
+
     # if dns method fails, use ipinfo.io | http method
     if [ "$IP_ADDRESS" = "" ]; then
       IPINFO=$(curl -sf4 https://ipinfo.io | jq -r '.ip')
       IP_ADDRESS=$([[ "$IPINFO" =~ ^[1-9][0-9]?[0-9]?\.[0-9][0-9]?[0-9]?\.[0-9][0-9]?[0-9]?\.[1-9][0-9]?[0-9]?$ ]] && echo "$IPIFY" || echo "")
     fi
-    
+
     # Use ipecho.net/plain
     if [ "$IP_ADDRESS" = "" ]; then
       IPECHO=$(curl -sf4 https://ipecho.net/plain)
@@ -86,7 +86,7 @@ getPublicIpAddress() {
     fi
 
     echo $IP_ADDRESS
-    
+
   elif [ "$IP_TYPE" == "6" ]; then #get public ipv6 addr
     # try dns method first.
     IP_ADDRESS=$(dig +short @2606:4700:4700::1111 -6 ch txt whoami.cloudflare | tr -d '"')
@@ -101,11 +101,28 @@ getPublicIpAddress() {
 }
 
 getDnsRecordName() {
-  if [ ! -z "$SUBDOMAIN" ]; then # Subdomain is filled
-    echo $SUBDOMAIN.$ZONE
-  else
-    echo $ZONE
+  OUTPUT=""
+  SUBDOMAINS="$(echo ${SUBDOMAIN} | tr -s ',' ' ')"
+  if [ -z "$SUBDOMAINS" ]; then
+    SUBDOMAINS="@"
   fi
+  set -o noglob
+  for DOMAIN in $SUBDOMAINS; do
+    if [ "$DOMAIN" == "@" ]; then # Root domain
+      if [ ! -z "$OUTPUT" ]; then
+        OUTPUT="$OUTPUT,$ZONE"
+      else
+        OUTPUT="$ZONE"
+      fi
+    elif [ ! -z "$DOMAIN" ]; then # Subdomain
+      if [ ! -z "$OUTPUT" ]; then
+        OUTPUT="$OUTPUT,$DOMAIN.$ZONE"
+      else
+        OUTPUT="$DOMAIN.$ZONE"
+      fi
+    fi
+  done
+  echo "$OUTPUT"
 }
 
 verifyToken() {
@@ -192,11 +209,10 @@ updateSPF_record() {
 
     echo $msg
   fi
-  
 }
 
 # $1: zone id
 # $2: record id
-getDnsRecordIp() { 
+getDnsRecordIp() {
   cloudflare "$CF_API/zones/$1/dns_records/$2" | jq -r '.result.content'
 }
